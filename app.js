@@ -26,7 +26,7 @@ app.set('view engine', 'ejs');
 
 // Database Connection
 const db = mysql.createConnection(process.env.JAWSDB_URL || {
-    host: 'host.docker.internal',
+    host: 'localhost',
     user: 'root',
     password: 'tts2004',
     database: 'my_database'
