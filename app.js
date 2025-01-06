@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Database Connection
-const db = mysql.createConnection(process.env.DATABASE_URL);
+const db = await mysql.createConnection(process.env.DATABASE_URL);
 
 async function query(sql, params) {
     const [rows] = await db.execute(sql, params);
@@ -42,14 +42,6 @@ app.use(session({
 
 // Set views directory
 app.set('views', path.join(__dirname, 'views'));
-
-// Promisify for db.query
-const query = util.promisify(db.query).bind(db);
-
-db.connect(err => {
-    if (err) throw err;
-    console.log('Connected to MySQL!');
-});
 
 // Login Routes
 app.get('/', (_, res) => {
