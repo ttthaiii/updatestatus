@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>รายงานโครงการ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .project-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .project-list th, .project-list td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .project-list th {
+            background-color: #f4f4f4;
+        }
+        .report-link {
+            color: blue;
+            text-decoration: none;
+        }
+        .report-link:hover {
+            text-decoration: underline;
+        }
+        .no-link {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>รายงานโครงการที่คุณมีสิทธิ์เข้าถึง</h1>
+    
+    <table class="project-list">
+        <thead>
+            <tr>
+                <th>ชื่อโครงการ</th>
+                <th>ลิงก์รายงาน</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% sites.forEach(site => { %>
+                <tr>
+                    <td><%= site.site_name %></td>
+                    <td>
+                        <% if (site.report_link) { %>
+                            <a href="<%= site.report_link %>" 
+                               target="_blank"
+                               class="report-link">
+                                ดูรายงาน
+                            </a>
+                        <% } else { %>
+                            <span class="no-link">ไม่มีลิงก์รายงาน</span>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 20px">
+        <a href="/menu" style="color: #666; text-decoration: none;">
+            &larr; กลับไปหน้าหลัก
+        </a>
+    </div>
+</body>
+</html>

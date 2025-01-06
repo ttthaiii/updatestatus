@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Menu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(45deg, #FF5722 50%, #796B63 50%);
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-section {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .welcome-section h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-section p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .site-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .site-list h2 {
+            color: #FF5722;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #FF5722;
+            padding-bottom: 10px;
+        }
+
+        .site-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #FF5722;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .site-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .actions-section {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .submit-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            background: #45a049;
+        }
+
+        .report-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-report {
+            background: #796B63;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-report:hover {
+            background: #665C56;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            margin-top: 5px;
+            background: white;
+            min-width: 250px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .report-dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+            gap: 10px;
+        }
+
+        .dropdown-item:hover {
+            background: #f5f5f5;
+            color: #FF5722;
+        }
+
+        .dropdown-item i {
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .no-sites {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border: 1px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .actions-section {
+                flex-direction: column;
+            }
+
+            .submit-btn, .btn-report {
+                width: 100%;
+            }
+
+            .dropdown-content {
+                width: 100%;
+                position: relative;
+                margin-top: 5px;
+            }
+
+            .logout-btn {
+                position: relative;
+                top: 0;
+                right: 0;
+                display: block;
+                width: 100%;
+                margin-top: 20px;
+            }
+
+            .site-list {
+                list-style: none;
+                padding: 0;
+            }
+
+            .site-item {
+                background: #f9f9f9;
+                margin: 10px 0;
+                padding: 15px;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .site-item i {
+                margin-right: 10px;
+                color: #FF5722;
+            }
+
+            .btn-report {
+                background-color: #4CAF50;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+                transition: background 0.3s;
+            }
+
+            .btn-report:hover {
+                background-color: #45a049;
+            }
+
+            .no-report {
+                color: #999;
+                font-style: italic;
+            }            
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button onclick="location.href='/logout'" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+
+        <div class="welcome-section">
+            <h1>Welcome, <%= username %></h1>
+            <p>Job Position: <%= job_position %></p>
+        </div>
+
+        <div class="accessible-sites">
+            <h2>Your Accessible Sites</h2>
+            <ul class="site-list">
+                <% sites.forEach(site => { %>
+                    <li class="site-item">
+                        <i class="fas fa-building"></i>
+                        <span><%= site.site_name %></span>
+                        <% if (site.report_link) { %>
+                            <!-- ปุ่มดูรายงาน -->
+                            <a href="<%= site.report_link %>" target="_blank" class="btn-report">
+                                <i class="fas fa-chart-bar"></i> ดูรายงาน
+                            </a>
+                        <% } else { %>
+                            <!-- ข้อความแสดงว่าไม่มีรายงาน -->
+                            <span class="no-report">ไม่มีรายงาน</span>
+                        <% } %>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+
+        <div class="actions-section">
+            <form action="/submit-document" method="POST" target="_blank">
+                <input type="hidden" name="job_position" value="<%= job_position %>">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-file-upload"></i>
+                    Submit Document
+                </button>
+            </form>  
+        </div>
+    </div>
+</body>
+</html>
