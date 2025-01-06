@@ -6,6 +6,7 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
+import 'dotenv/config';  // โหลดค่าจากไฟล์ .env
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -16,21 +17,27 @@ const __dirname = path.dirname(__filename);
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Database Connection
+const db = mysql.createConnection(process.env.DATABASE_URL);
+
+db.connect(err => {
+    if (err) {
+        console.error('❌ Database connection failed:', err);
+        return;
+    }
+    console.log('✅ Connected to the database');
+});
+
+// Express Session Setup
 app.use(session({
     secret: 'your-secret-key',
     resave: false,
     saveUninitialized: false
 }));
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
 
-// Database Connection
-const db = mysql.createConnection(process.env.JAWSDB_URL || {
-    host: 'localhost',
-    user: 'root',
-    password: 'tts2004',
-    database: 'my_database'
-});
+// Set views directory
+app.set('views', path.join(__dirname, 'views'));
 
 // Promisify for db.query
 const query = util.promisify(db.query).bind(db);
@@ -395,8 +402,8 @@ app.get('/menu', async (req, res) => {
     }
 });
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${port}/`);
+app.listen(port, () => {
+    console.log(`✅ Server is running on port ${port}`);
     
     // แสดง IP address ของเครื่อง
     const networkInterfaces = os.networkInterfaces();
