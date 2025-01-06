@@ -1,5 +1,5 @@
 import express from 'express';
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise'; // ใช้ promise เพื่อรองรับ async/await
 import bodyParser from 'body-parser';
 import util from 'util';
 import session from 'express-session';
@@ -21,6 +21,10 @@ app.use(express.json());
 // Database Connection
 const db = mysql.createConnection(process.env.DATABASE_URL);
 
+async function query(sql, params) {
+    const [rows] = await db.execute(sql, params);
+    return rows;
+}
 db.connect(err => {
     if (err) {
         console.error('❌ Database connection failed:', err);
@@ -145,44 +149,48 @@ app.get('/admin', async (_, res) => {
 });
 
 // อัพเดทโค้ดส่วนเพิ่มโครงการ
-app.post('/admin/sites/add', async (req, res) => {
+app.post('/admin/sites/edit/:id', (req, res) => {
+    const { id } = req.params;
     const { site_name, report_link } = req.body;
 
-    try {
-        await query('INSERT INTO sites (site_name, report_link) VALUES (?, ?)', 
-            [site_name, report_link || null]);
-        res.redirect('/admin');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error adding site.');
-    }
+    const query = 'UPDATE sites SET site_name = ?, report_link = ? WHERE id = ?';
+    db.query(query, [site_name, report_link, id], (err, result) => {
+        if (err) {
+            console.error('❌ Error updating project:', err);
+            return res.status(500).send('Error updating project.');
+        }
+        res.status(200).send('Project updated successfully!');
+    });
 });
 
 // เพิ่ม route สำหรับแก้ไขข้อมูลโครงการ
 app.post('/admin/sites/edit', async (req, res) => {
     try {
         const { id, site_name, report_link } = req.body;
-        console.log('Received data:', { id, site_name, report_link });
 
-        // ตรวจสอบว่า site มีอยู่จริง
+        if (!id || !site_name) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // ตรวจสอบว่าโครงการมีอยู่จริงหรือไม่
         const site = await query('SELECT * FROM sites WHERE id = ?', [id]);
         if (site.length === 0) {
             return res.status(404).json({ error: 'Site not found' });
         }
 
-        // อัพเดทข้อมูล
-        const result = await query(
+        // อัปเดตข้อมูลโครงการ
+        await query(
             'UPDATE sites SET site_name = ?, report_link = ? WHERE id = ?',
-            [site_name, report_link, id]
+            [site_name, report_link || null, id]
         );
 
-        res.json({ 
+        res.status(200).json({ 
             success: true,
-            message: 'Updated successfully',
+            message: 'Project updated successfully',
             data: { id, site_name, report_link }
         });
     } catch (err) {
-        console.error('Error updating site:', err);
+        console.error('❌ Error updating site:', err);
         res.status(500).json({ 
             error: 'Error updating site',
             details: err.message 
