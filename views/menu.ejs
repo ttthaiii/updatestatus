@@ -299,13 +299,10 @@
         </div>
 
         <div class="actions-section">
-            <form action="/submit-document" method="POST" target="_blank">
-                <input type="hidden" name="job_position" value="<%= job_position %>">
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-file-upload"></i>
-                    Submit Document
-                </button>
-            </form>  
+            <a href="/submit-document" class="submit-btn">
+                <i class="fas fa-file-upload"></i>
+                Submit Document
+            </a>
         </div>
     </div>
 </body>

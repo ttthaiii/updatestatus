@@ -7,16 +7,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 import 'dotenv/config';  // โหลดค่าจากไฟล์ .env
+import submitDocumentRoutes from './routes/submitDocument.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const query = util.promisify(db.query).bind(db);
 
 // Setup View Engine
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+app.use('/submit-document', submitDocumentRoutes);
 
 // Database Connection
 const db = await mysql.createConnection(process.env.DATABASE_URL);
@@ -141,17 +144,20 @@ app.get('/admin', async (_, res) => {
 });
 
 // อัพเดทโค้ดส่วนเพิ่มโครงการ
-app.post('/admin/sites/edit/:id', (req, res) => {
-    const { id } = req.params;
+app.post('/admin/sites/add', (req, res) => {
     const { site_name, report_link } = req.body;
 
-    const query = 'UPDATE sites SET site_name = ?, report_link = ? WHERE id = ?';
-    db.query(query, [site_name, report_link, id], (err, result) => {
+    if (!site_name) {
+        return res.status(400).json({ error: 'Site name is required' });
+    }
+
+    const query = 'INSERT INTO sites (site_name, report_link) VALUES (?, ?)';
+    db.query(query, [site_name, report_link], (err, result) => {
         if (err) {
-            console.error('❌ Error updating project:', err);
-            return res.status(500).send('Error updating project.');
+            console.error('❌ Error adding site:', err);
+            return res.status(500).send('Error adding site.');
         }
-        res.status(200).send('Project updated successfully!');
+        res.status(201).send('Site added successfully!');
     });
 });
 
@@ -194,25 +200,29 @@ app.post('/admin/sites/edit', async (req, res) => {
 app.post('/admin/sites/delete', async (req, res) => {
     const { id } = req.body;
 
+    if (!id) {
+        return res.status(400).json({ error: 'Site ID is required' });
+    }
+
     try {
         // เริ่ม transaction
         await query('START TRANSACTION');
 
         // ลบข้อมูลที่เกี่ยวข้องในตาราง user_projects ก่อน
         await query('DELETE FROM user_projects WHERE site_id = ?', [id]);
-        
+
         // จากนั้นลบข้อมูลในตาราง sites
         await query('DELETE FROM sites WHERE id = ?', [id]);
 
         // commit transaction
         await query('COMMIT');
-        
+
         res.status(200).json({ message: 'Deleted successfully' });
     } catch (err) {
         // rollback หากเกิดข้อผิดพลาด
         await query('ROLLBACK');
-        console.error('Error deleting site:', err);
-        res.status(500).json({ error: 'Error deleting site' });
+        console.error('❌ Error deleting site:', err);
+        res.status(500).json({ error: 'Error deleting site', details: err.message });
     }
 });
 
