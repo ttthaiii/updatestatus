@@ -1,12 +1,11 @@
 import express from 'express';
-import mysql from 'mysql2/promise'; // ใช้ promise เพื่อรองรับ async/await
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import os from 'os';
 import 'dotenv/config';
 import submitDocumentRoutes from './routes/submitDocument.js';
+import pool from './db.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -18,25 +17,6 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use('/submit-document', submitDocumentRoutes);
-
-export default app;
-
-// Database Connection
-const db = await mysql.createConnection(process.env.DATABASE_URL);
-
-// Promisify query function for reusability
-async function query(sql, params) {
-    const [rows] = await db.execute(sql, params);
-    return rows;
-}
-
-db.connect(err => {
-    if (err) {
-        console.error('❌ Database connection failed:', err);
-        return;
-    }
-    console.log('✅ Connected to the database');
-});
 
 // Express Session Setup
 app.use(session({
@@ -57,7 +37,7 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const users = await query('SELECT * FROM users WHERE username = ?', [username]);
+        const users = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (users.length > 0) {
             const user = users[0];
             if (password === user.password) {
@@ -71,7 +51,7 @@ app.post('/login', async (req, res) => {
                 if (user.role === 'admin') {
                     res.redirect('/admin');
                 } else {
-                    const userSites = await query(
+                    const userSites = await pool.query(
                         `SELECT s.* FROM sites s 
                          INNER JOIN user_projects up ON s.id = up.site_id 
                          WHERE up.user_id = ?
@@ -114,8 +94,8 @@ const checkAuth = (req, res, next) => {
 // Admin Panel Routes
 app.get('/admin', async (_, res) => {
     try {
-        const sites = await query('SELECT * FROM sites');
-        const users = await query(`
+        const sites = await pool.query('SELECT * FROM sites');
+        const users = await pool.query(`
             SELECT u.*, 
                    GROUP_CONCAT(up.site_id) as site_ids,
                    GROUP_CONCAT(s.site_name) as site_names
@@ -146,7 +126,7 @@ app.post('/admin/sites/add', async (req, res) => {
     const { site_name, report_link } = req.body;
 
     try {
-        await query('INSERT INTO sites (site_name, report_link) VALUES (?, ?)', [site_name, report_link]);
+        await pool.query('INSERT INTO sites (site_name, report_link) VALUES (?, ?)', [site_name, report_link]);
         res.status(201).send('Site added successfully!');
     } catch (err) {
         console.error('❌ Error adding site:', err);
@@ -158,7 +138,7 @@ app.post('/admin/sites/add', async (req, res) => {
 app.post('/admin/sites/edit', async (req, res) => {
     try {
         const { id, site_name, report_link } = req.body;
-        await query('UPDATE sites SET site_name = ?, report_link = ? WHERE id = ?', [site_name, report_link, id]);
+        await pool.query('UPDATE sites SET site_name = ?, report_link = ? WHERE id = ?', [site_name, report_link, id]);
         res.status(200).json({ message: 'Project updated successfully' });
     } catch (err) {
         console.error('❌ Error updating site:', err);
@@ -171,7 +151,7 @@ app.post('/admin/sites/delete', async (req, res) => {
     const { id } = req.body;
 
     try {
-        await query('DELETE FROM sites WHERE id = ?', [id]);
+        await pool.query('DELETE FROM sites WHERE id = ?', [id]);
         res.status(200).json({ message: 'Deleted successfully' });
     } catch (err) {
         console.error('❌ Error deleting site:', err);
@@ -185,10 +165,10 @@ app.post('/admin/add', async (req, res) => {
 
     try {
         // Start transaction
-        await query('START TRANSACTION');
+        await pool.query('START TRANSACTION');
 
         // Insert user
-        const result = await query(
+        const result = await pool.query(
             'INSERT INTO users (username, password, role, job_position) VALUES (?, ?, "user", ?)',
             [username, password, job_position]
         );
@@ -196,7 +176,7 @@ app.post('/admin/add', async (req, res) => {
         // Insert user's projects
         if (selectedSites && selectedSites.length > 0) {
             for (const siteId of selectedSites) {
-                await query(
+                await pool.query(
                     'INSERT INTO user_projects (user_id, site_id) VALUES (?, ?)',
                     [result.insertId, siteId]
                 );
@@ -204,11 +184,11 @@ app.post('/admin/add', async (req, res) => {
         }
 
         // Commit transaction
-        await query('COMMIT');
+        await pool.query('COMMIT');
         res.redirect('/admin');
     } catch (err) {
         // Rollback on error
-        await query('ROLLBACK');
+        await pool.query('ROLLBACK');
         console.error(err);
         res.status(500).send('Error adding user.');
     }
@@ -221,10 +201,10 @@ app.post('/admin/edit', async (req, res) => {
         const selectedSites = Array.isArray(site_ids) ? site_ids : [site_ids];
 
         // Start transaction
-        await query('START TRANSACTION');
+        await pool.query('START TRANSACTION');
 
         // Update user info
-        const updateUserResult = await query(
+        const updateUserResult = await pool.query(
             'UPDATE users SET username = ?, password = ?, job_position = ? WHERE id = ?',
             [username, password, job_position, id]
         );
@@ -234,12 +214,12 @@ app.post('/admin/edit', async (req, res) => {
         }
 
         // Remove old project associations
-        await query('DELETE FROM user_projects WHERE user_id = ?', [id]);
+        await pool.query('DELETE FROM user_projects WHERE user_id = ?', [id]);
 
         // Add new project associations
         if (selectedSites && selectedSites.length > 0) {
             for (const siteId of selectedSites) {
-                await query(
+                await pool.query(
                     'INSERT INTO user_projects (user_id, site_id) VALUES (?, ?)',
                     [id, siteId]
                 );
@@ -247,11 +227,11 @@ app.post('/admin/edit', async (req, res) => {
         }
 
         // Commit transaction
-        await query('COMMIT');
+        await pool.query('COMMIT');
         res.json({ success: true, message: 'User updated successfully' });
     } catch (err) {
         // Rollback on error
-        await query('ROLLBACK');
+        await pool.query('ROLLBACK');
         console.error('Error updating user:', err);
         res.status(500).json({
             success: false,
@@ -267,20 +247,20 @@ app.post('/admin/delete', async (req, res) => {
 
     try {
         // Start transaction
-        await query('START TRANSACTION');
+        await pool.query('START TRANSACTION');
 
         // Delete user's project associations
-        await query('DELETE FROM user_projects WHERE user_id = ?', [id]);
+        await pool.query('DELETE FROM user_projects WHERE user_id = ?', [id]);
 
         // Delete user
-        await query('DELETE FROM users WHERE id = ?', [id]);
+        await pool.query('DELETE FROM users WHERE id = ?', [id]);
 
         // Commit transaction
-        await query('COMMIT');
+        await pool.query('COMMIT');
         res.redirect('/admin');
     } catch (err) {
         // Rollback on error
-        await query('ROLLBACK');
+        await pool.query('ROLLBACK');
         console.error(err);
         res.status(500).send('Error deleting user.');
     }
@@ -291,8 +271,8 @@ app.get('/admin/search', async (req, res) => {
     const { query: searchQuery } = req.query;
 
     try {
-        const sites = await query('SELECT * FROM sites');
-        const users = await query(`
+        const sites = await pool.query('SELECT * FROM sites');
+        const users = await pool.query(`
             SELECT u.*, 
                    GROUP_CONCAT(up.site_id) as site_ids,
                    GROUP_CONCAT(s.site_name) as site_names
@@ -320,12 +300,11 @@ app.get('/admin/search', async (req, res) => {
     }
 });
 
-
 // Menu Route
 app.get('/menu', async (req, res) => {
     try {
         const userId = req.session.user.id;
-        const userSites = await query(
+        const userSites = await pool.query(
             `SELECT s.site_name, s.report_link 
              FROM sites s 
              INNER JOIN user_projects up ON s.id = up.site_id 
