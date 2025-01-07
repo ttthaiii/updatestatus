@@ -3,11 +3,14 @@ import bodyParser from 'body-parser';
 import session from 'express-session';
 import fileUpload from 'express-fileupload';
 import path from 'path';
+import mysql from 'mysql2/promise';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 import submitDocumentRoutes from './src/routes/submitDocument.js';
 import pool from './db.js';
-import MySQLStore from 'express-mysql-session';
+import MySQLStoreFactory from 'express-mysql-session';
+
+const MySQLStore = MySQLStoreFactory(session);
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -19,10 +22,12 @@ const options = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    createDatabaseTable: true  // สร้างตาราง sessions อัตโนมัติ
+    createDatabaseTable: true
 };
 
-const sessionStore = new MySQLStore(options);
+const connection = mysql.createPool(options);
+const sessionStore = new MySQLStore({}, connection);
+
 // ตั้งค่า View Engine
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -37,11 +42,12 @@ app.use(fileUpload({
 }));
 
 app.use(session({
+    key: 'session_cookie_name',
     secret: process.env.SESSION_SECRET || 'your-secret-key',
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
