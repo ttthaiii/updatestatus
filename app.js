@@ -34,7 +34,7 @@ app.use(session({
 }));
 
 // Set views directory
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'src', 'views'));
 
 // กำหนดโฟลเดอร์ static
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -43,8 +43,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/submit-document', submitDocumentRoutes);
 
 // Login Routes
-app.get('/', (_, res) => {
-    res.render('login');
+app.get('/', (req, res) => {
+    res.render('login');  // ต้องมีไฟล์ login.ejs ในโฟลเดอร์ views
 });
 
 app.post('/login', async (req, res) => {
