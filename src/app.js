@@ -19,6 +19,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use('/submit-document', submitDocumentRoutes);
 
+export default app;
+
 // Database Connection
 const db = await mysql.createConnection(process.env.DATABASE_URL);
 

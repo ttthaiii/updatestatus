@@ -1,8 +1,6 @@
 import express from 'express';
-import { query } from '..app.js'; // สมมติคุณมีไฟล์ db.js สำหรับจัดการฐานข้อมูล
-import path from 'path';
 import fileUpload from 'express-fileupload';
-
+import pool from '../db.js';  // นำเข้าโมดูลฐานข้อมูล
 const router = express.Router();
 
 // เปิดใช้งานการอัปโหลดไฟล์
