@@ -1,10 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
+import fileUpload from 'express-fileupload';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
-import submitDocumentRoutes from './routes/submitDocument.js';
+import submitDocumentRoutes from './src/routes/submitDocument.js';
 import pool from './db.js';
 
 const app = express();
@@ -12,21 +13,34 @@ const port = process.env.PORT || 4000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Setup View Engine
+// ตั้งค่า View Engine
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
-app.use('/submit-document', submitDocumentRoutes);
+
+// ตั้งค่า File Upload
+app.use(fileUpload({
+    createParentPath: true,
+    limits: { 
+        fileSize: 50 * 1024 * 1024 // จำกัดขนาดไฟล์ที่ 50MB
+    },
+}));
 
 // Express Session Setup
 app.use(session({
-    secret: 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false
 }));
 
 // Set views directory
 app.set('views', path.join(__dirname, 'views'));
+
+// กำหนดโฟลเดอร์ static
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes
+app.use('/submit-document', submitDocumentRoutes);
 
 // Login Routes
 app.get('/', (_, res) => {
@@ -324,6 +338,6 @@ app.get('/menu', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`✅ Server is running on port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`✅ เซิร์ฟเวอร์ทำงานที่พอร์ต ${port}`);
 });
