@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from '../db.js'; // สมมติคุณมีไฟล์ db.js สำหรับจัดการฐานข้อมูล
+import { query } from 'app.js'; // สมมติคุณมีไฟล์ db.js สำหรับจัดการฐานข้อมูล
 import path from 'path';
 import fileUpload from 'express-fileupload';
 
