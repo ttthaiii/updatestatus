@@ -7,12 +7,21 @@ import { fileURLToPath } from 'url';
 import 'dotenv/config';
 import submitDocumentRoutes from './src/routes/submitDocument.js';
 import pool from './db.js';
+import MySQLStore from 'express-mysql-session';
 
 const app = express();
 const port = process.env.PORT || 4000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const options = {
+    host: process.env.DB_HOST,
+    port: 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+};
 
+const sessionStore = new MySQLStore(options);
 // ตั้งค่า View Engine
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,10 +36,18 @@ app.use(fileUpload({
 }));
 
 // Express Session Setup
+import connectMemoryStore from 'connect-memorystore';
+const MemoryStore = connectMemoryStore(session);
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
+    store: sessionStore,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    }
 }));
 
 // Set views directory
