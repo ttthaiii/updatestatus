@@ -18,7 +18,8 @@ const options = {
     port: 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    createDatabaseTable: true  // สร้างตาราง sessions อัตโนมัติ
 };
 
 const sessionStore = new MySQLStore(options);
@@ -35,18 +36,13 @@ app.use(fileUpload({
     },
 }));
 
-// Express Session Setup
-import connectMemoryStore from 'connect-memorystore';
-const MemoryStore = connectMemoryStore(session);
-
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
-    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 1000 * 60 * 60 * 24 // 24 hours
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
 
